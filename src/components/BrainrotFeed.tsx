@@ -1,12 +1,18 @@
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   ArchiveX,
+  ChevronDown,
+  Database,
+  Loader2,
   Plus,
   RefreshCw,
   RotateCcw,
 } from 'lucide-react';
 import type { BrainrotEntry, SortMode } from '../types/brainrot';
 import { BrainrotCard } from './BrainrotCard';
+
+const INITIAL_VISIBLE = 24;
 
 interface BrainrotFeedProps {
   entries: BrainrotEntry[];
@@ -17,6 +23,9 @@ interface BrainrotFeedProps {
   onSortChange: (mode: SortMode) => void;
   hasActiveFilters: boolean;
   upvotedIds: Record<string, boolean>;
+  isLiveSupabase: boolean;
+  seedingProgress: { inserted: number; total: number } | null;
+  onSeedThousand: () => void;
   onUpvote: (entry: BrainrotEntry) => void;
   onRetry: () => void;
   onResetFilters: () => void;
@@ -33,12 +42,24 @@ export function BrainrotFeed({
   onSortChange,
   hasActiveFilters,
   upvotedIds,
+  isLiveSupabase,
+  seedingProgress,
+  onSeedThousand,
   onUpvote,
   onRetry,
   onResetFilters,
   onOpenSubmit,
   onOpenSetup,
 }: BrainrotFeedProps) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [entries]);
+
+  const visibleEntries = entries.slice(0, visibleCount);
+  const remainingCount = Math.max(0, entries.length - visibleEntries.length);
+
   return (
     <section id="arsip" className="py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -50,17 +71,47 @@ export function BrainrotFeed({
             <p className="mt-1 text-sm text-zinc-400">
               Menampilkan{' '}
               <span className="font-mono font-semibold text-zinc-200 tabular-nums">
-                {entries.length}
+                {visibleEntries.length}
               </span>{' '}
               dari{' '}
               <span className="font-mono font-semibold text-zinc-200 tabular-nums">
-                {totalCount}
+                {entries.length}
               </span>{' '}
-              entri
+              cocok (total{' '}
+              <span className="font-mono font-semibold text-[#FFE600] tabular-nums">
+                {totalCount.toLocaleString('id-ID')}
+              </span>{' '}
+              entri)
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {isLiveSupabase && totalCount < 100 && !loading && !error && (
+              <button
+                type="button"
+                onClick={onSeedThousand}
+                disabled={Boolean(seedingProgress)}
+                className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-[#FFE600]/50 bg-[#FFE600]/10 px-3.5 py-2 text-xs font-semibold text-[#FFE600] whitespace-nowrap transition-colors hover:bg-[#FFE600]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {seedingProgress ? (
+                  <>
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                    <span className="font-mono tabular-nums">
+                      Mengisi {seedingProgress.inserted}/{seedingProgress.total}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-4 w-4" aria-hidden="true" />
+                    <span>Isi 1.000 Brainrot Terkenal</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <div
               role="group"
               aria-label="Urutkan entri"
@@ -114,17 +165,13 @@ export function BrainrotFeed({
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
-                className="flex h-72 flex-col justify-between rounded-xl border border-zinc-800 bg-[#121216] p-5"
+                className="flex h-80 flex-col justify-between rounded-xl border border-zinc-800 bg-[#121216] p-5"
               >
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="h-5 w-20 animate-pulse rounded bg-zinc-800" />
-                    <div className="h-4 w-24 animate-pulse rounded bg-zinc-800" />
-                  </div>
-                  <div className="h-6 w-3/4 animate-pulse rounded bg-zinc-800" />
+                  <div className="aspect-video w-full animate-pulse rounded-lg bg-zinc-800" />
+                  <div className="h-5 w-3/4 animate-pulse rounded bg-zinc-800" />
                   <div className="space-y-2">
                     <div className="h-4 w-full animate-pulse rounded bg-zinc-800/80" />
-                    <div className="h-4 w-5/6 animate-pulse rounded bg-zinc-800/80" />
                     <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-800/80" />
                   </div>
                 </div>
@@ -155,7 +202,9 @@ export function BrainrotFeed({
                     {error}
                   </p>
                   <p className="text-xs text-zinc-400">
-                    Pastikan tabel <code className="font-mono text-[#FFE600]">brainrots</code> dan kebijakan RLS sudah dibuat di proyek Supabase Anda.
+                    Pastikan tabel{' '}
+                    <code className="font-mono text-[#FFE600]">brainrots</code>{' '}
+                    dan kebijakan RLS sudah dibuat di proyek Supabase Anda.
                   </p>
                 </div>
               </div>
@@ -194,7 +243,7 @@ export function BrainrotFeed({
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
               {hasActiveFilters
                 ? 'Coba ubah kata kunci pencarian atau pilih kategori lain untuk melihat lore brainrot lainnya.'
-                : 'Belum ada lore brainrot yang tersimpan. Jadilah kontributor pertama yang mengarsipkan istilah meme di sini.'}
+                : 'Belum ada lore brainrot yang tersimpan. Anda dapat langsung mengisi 1.000 entri brainrot terkenal ke Supabase atau menambah entri manual.'}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               {hasActiveFilters && (
@@ -205,6 +254,31 @@ export function BrainrotFeed({
                 >
                   <RotateCcw className="h-4 w-4" aria-hidden="true" />
                   <span>Reset Filter</span>
+                </button>
+              )}
+              {!hasActiveFilters && isLiveSupabase && (
+                <button
+                  type="button"
+                  onClick={onSeedThousand}
+                  disabled={Boolean(seedingProgress)}
+                  className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-lg border border-[#FFE600]/60 bg-[#FFE600]/15 px-4 py-2 text-sm font-bold text-[#FFE600] transition-colors hover:bg-[#FFE600]/25 disabled:opacity-60"
+                >
+                  {seedingProgress ? (
+                    <>
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        Mengisi {seedingProgress.inserted}/{seedingProgress.total}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4" aria-hidden="true" />
+                      <span>Isi 1.000 Brainrot Terkenal</span>
+                    </>
+                  )}
                 </button>
               )}
               <button
@@ -219,17 +293,45 @@ export function BrainrotFeed({
           </div>
         )}
 
-        {!loading && !error && entries.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {entries.map((entry) => (
-              <BrainrotCard
-                key={entry.id}
-                entry={entry}
-                isUpvoted={Boolean(upvotedIds[entry.id])}
-                onUpvote={onUpvote}
-              />
-            ))}
-          </div>
+        {!loading && !error && visibleEntries.length > 0 && (
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {visibleEntries.map((entry) => (
+                <BrainrotCard
+                  key={entry.id}
+                  entry={entry}
+                  isUpvoted={Boolean(upvotedIds[entry.id])}
+                  onUpvote={onUpvote}
+                />
+              ))}
+            </div>
+
+            {remainingCount > 0 && (
+              <div className="mt-10 flex flex-col items-center justify-center gap-3 border-t border-zinc-800/80 pt-8 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 24)}
+                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-[#FFE600] px-6 py-2.5 text-sm font-bold text-[#09090B] whitespace-nowrap transition-colors hover:bg-[#FFD000] focus-visible:outline-2 focus-visible:outline-[#FFE600]"
+                >
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  <span>
+                    Muat 24 Lagi (Tersisa{' '}
+                    {remainingCount.toLocaleString('id-ID')})
+                  </span>
+                </button>
+
+                {remainingCount > 24 && (
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + 100)}
+                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-zinc-700 bg-[#121216] px-5 py-2.5 text-sm font-semibold text-zinc-200 whitespace-nowrap transition-colors hover:border-zinc-500 hover:text-white"
+                  >
+                    <span>+100 Entri</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

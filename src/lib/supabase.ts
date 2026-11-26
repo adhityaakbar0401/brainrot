@@ -21,16 +21,66 @@ export async function fetchBrainrots(): Promise<BrainrotEntry[]> {
     throw new Error('Supabase environment variables belum dikonfigurasi.');
   }
 
-  const { data, error } = await supabase
-    .from('brainrots')
-    .select('id, title, lore, category, image_url, upvotes, created_at')
-    .order('created_at', { ascending: false });
+  const pageSize = 1000;
+  const allRows: BrainrotEntry[] = [];
+  let from = 0;
 
-  if (error) {
-    throw new Error(error.message || 'Gagal memuat data dari tabel brainrots.');
+  while (true) {
+    const { data, error } = await supabase
+      .from('brainrots')
+      .select('id, title, lore, category, image_url, upvotes, created_at')
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw new Error(error.message || 'Gagal memuat data dari tabel brainrots.');
+    }
+
+    const batch = (data ?? []) as BrainrotEntry[];
+    allRows.push(...batch);
+
+    if (batch.length < pageSize) {
+      break;
+    }
+    from += pageSize;
   }
 
-  return (data ?? []) as BrainrotEntry[];
+  return allRows;
+}
+
+export async function seedFamousBrainrotsToSupabase(
+  items: BrainrotEntry[],
+  onProgress?: (inserted: number, total: number) => void
+): Promise<number> {
+  if (!supabase) {
+    throw new Error('Supabase environment variables belum dikonfigurasi.');
+  }
+
+  const batchSize = 100;
+  let inserted = 0;
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize).map((item) => ({
+      title: item.title,
+      lore: item.lore,
+      category: item.category,
+      image_url: item.image_url,
+      upvotes: item.upvotes,
+      created_at: item.created_at,
+    }));
+
+    const { error } = await supabase.from('brainrots').insert(chunk);
+    if (error) {
+      throw new Error(
+        error.message || `Gagal mengunggah batch ke-${i / batchSize + 1}.`
+      );
+    }
+
+    inserted += chunk.length;
+    onProgress?.(inserted, items.length);
+  }
+
+  return inserted;
 }
 
 export async function createBrainrot(

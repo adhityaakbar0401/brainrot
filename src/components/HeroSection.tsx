@@ -134,7 +134,7 @@ export function HeroSection({
                       Entri Terarsip
                     </p>
                     <p className="mt-1 font-mono text-2xl font-bold text-[#FFE600] tabular-nums">
-                      {totalEntries}
+                      {totalEntries.toLocaleString('id-ID')}
                     </p>
                   </div>
                   <div>
@@ -142,7 +142,7 @@ export function HeroSection({
                       Total Upvote
                     </p>
                     <p className="mt-1 font-mono text-2xl font-bold text-[#FF5C72] tabular-nums">
-                      {totalUpvotes}
+                      {totalUpvotes.toLocaleString('id-ID')}
                     </p>
                   </div>
                 </div>

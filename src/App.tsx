@@ -12,6 +12,7 @@ import {
   createBrainrot,
   fetchBrainrots,
   isSupabaseConfigured,
+  seedFamousBrainrotsToSupabase,
   upvoteBrainrot,
 } from './lib/supabase';
 import type {
@@ -21,7 +22,7 @@ import type {
   SortMode,
 } from './types/brainrot';
 
-const LOCAL_ENTRIES_KEY = 'brainrot_archive_local_entries_v1';
+const LOCAL_ENTRIES_KEY = 'brainrot_archive_local_entries_v2';
 const UPVOTED_IDS_KEY = 'brainrot_archive_upvoted_ids_v1';
 
 interface ToastMessage {
@@ -73,6 +74,10 @@ export default function App() {
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [dismissConfigBanner, setDismissConfigBanner] = useState(false);
+  const [seedingProgress, setSeedingProgress] = useState<{
+    inserted: number;
+    total: number;
+  } | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   const showToast = useCallback((type: 'success' | 'error', text: string) => {
@@ -262,6 +267,33 @@ export default function App() {
     setSelectedCategory('Semua');
   }, []);
 
+  const handleSeedThousand = useCallback(async () => {
+    if (!isSupabaseConfigured || seedingProgress) return;
+    setSeedingProgress({ inserted: 0, total: STARTER_BRAINROTS.length });
+    try {
+      const inserted = await seedFamousBrainrotsToSupabase(
+        STARTER_BRAINROTS,
+        (done, total) => {
+          setSeedingProgress({ inserted: done, total });
+        }
+      );
+      await loadEntries();
+      showToast(
+        'success',
+        `${inserted.toLocaleString('id-ID')} brainrot terkenal berhasil diisi ke Supabase.`
+      );
+    } catch (err) {
+      showToast(
+        'error',
+        err instanceof Error
+          ? err.message
+          : 'Gagal mengisi 1.000 brainrot ke Supabase.'
+      );
+    } finally {
+      setSeedingProgress(null);
+    }
+  }, [seedingProgress, loadEntries, showToast]);
+
   const hasActiveFilters =
     searchQuery.trim().length > 0 || selectedCategory !== 'Semua';
 
@@ -341,6 +373,9 @@ export default function App() {
           onSortChange={setSortMode}
           hasActiveFilters={hasActiveFilters}
           upvotedIds={upvotedIds}
+          isLiveSupabase={isSupabaseConfigured}
+          seedingProgress={seedingProgress}
+          onSeedThousand={handleSeedThousand}
           onUpvote={handleUpvote}
           onRetry={loadEntries}
           onResetFilters={handleResetFilters}

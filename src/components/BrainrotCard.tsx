@@ -39,10 +39,9 @@ export function BrainrotCard({
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
       className="group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-[#121216] transition-colors duration-150 hover:border-zinc-600"
     >
       <BrainrotMedia
