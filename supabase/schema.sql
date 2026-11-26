@@ -49,6 +49,25 @@ as $$
   returning *;
 $$;
 
+-- Storage Bucket untuk upload gambar kartu brainrot
+insert into storage.buckets (id, name, public)
+values ('brainrot-images', 'brainrot-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Public read brainrot-images" on storage.objects;
+create policy "Public read brainrot-images"
+  on storage.objects
+  for select
+  to anon, authenticated
+  using (bucket_id = 'brainrot-images');
+
+drop policy if exists "Public upload brainrot-images" on storage.objects;
+create policy "Public upload brainrot-images"
+  on storage.objects
+  for insert
+  to anon, authenticated
+  with check (bucket_id = 'brainrot-images');
+
 -- Data awal opsional agar arsip langsung terisi
 insert into public.brainrots (title, lore, category, upvotes)
 values

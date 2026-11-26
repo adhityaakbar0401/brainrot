@@ -45,14 +45,12 @@ export function BrainrotCard({
       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className="group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-[#121216] transition-colors duration-150 hover:border-zinc-600"
     >
-      {entry.image_url ? (
-        <BrainrotMedia
-          src={entry.image_url}
-          alt={entry.title}
-          category={entry.category}
-          className="aspect-[4/3] w-full border-b border-zinc-800/80"
-        />
-      ) : null}
+      <BrainrotMedia
+        src={entry.image_url}
+        title={entry.title}
+        category={entry.category}
+        className="aspect-video w-full border-b border-zinc-800/80"
+      />
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center justify-between gap-3">

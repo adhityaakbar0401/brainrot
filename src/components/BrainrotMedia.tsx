@@ -1,44 +1,66 @@
-import { useState } from 'react';
-import { ImageOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { BrainrotCategory } from '../types/brainrot';
+import {
+  getCategoryStyles,
+  getPollinationsImageUrl,
+} from '../utils/formatters';
 
 interface BrainrotMediaProps {
-  src: string;
-  alt: string;
+  src?: string | null;
+  title: string;
   category: BrainrotCategory;
   className?: string;
 }
 
 export function BrainrotMedia({
   src,
-  alt,
+  title,
   category,
-  className = 'aspect-[4/3] w-full',
+  className = 'aspect-video w-full',
 }: BrainrotMediaProps) {
+  const trimmedSrc = src?.trim() ?? '';
+  const resolvedSrc = trimmedSrc || getPollinationsImageUrl(title);
   const [hasError, setHasError] = useState(false);
 
-  if (hasError || !src.trim()) {
+  useEffect(() => {
+    setHasError(false);
+  }, [resolvedSrc]);
+
+  const categoryStyle = getCategoryStyles(category);
+
+  if (hasError) {
     return (
       <div
-        className={`${className} flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-zinc-900 via-[#15151B] to-zinc-950 p-4 text-center`}
+        className={`${className} relative flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br ${categoryStyle.gradientClass} px-6 py-5 text-center`}
         role="img"
-        aria-label={alt}
+        aria-label={title}
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/90 text-zinc-400">
-          <ImageOff className="h-5 w-5" aria-hidden="true" />
-        </div>
-        <p className="max-w-[20ch] truncate text-xs font-medium text-zinc-400">
-          {category} · Gambar tidak tersedia
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.28) 1px, transparent 0)',
+            backgroundSize: '18px 18px',
+          }}
+        />
+        <span
+          className={`relative z-10 rounded-md border px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${categoryStyle.badgeClass}`}
+        >
+          {category}
+        </span>
+        <p className="relative z-10 mt-2.5 line-clamp-2 max-w-[24ch] font-display text-xl font-extrabold leading-tight tracking-tight text-zinc-50 drop-shadow-sm sm:text-2xl">
+          {title}
         </p>
       </div>
     );
   }
 
   return (
-    <div className={`${className} overflow-hidden bg-zinc-950`}>
+    <div className={`${className} relative overflow-hidden bg-zinc-950`}>
       <img
-        src={src}
-        alt={alt}
+        src={resolvedSrc}
+        alt={title}
         loading="lazy"
         referrerPolicy="no-referrer"
         onError={() => setHasError(true)}

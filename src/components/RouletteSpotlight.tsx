@@ -90,24 +90,18 @@ export function RouletteSpotlight({
               initial={{ opacity: 0.5, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="grid grid-cols-1 overflow-hidden rounded-xl border border-zinc-700/80 bg-[#141419] lg:grid-cols-12"
+              className="group grid grid-cols-1 overflow-hidden rounded-xl border border-zinc-700/80 bg-[#141419] lg:grid-cols-12"
             >
-              {spotlight.image_url ? (
-                <div className="lg:col-span-4">
-                  <BrainrotMedia
-                    src={spotlight.image_url}
-                    alt={spotlight.title}
-                    category={spotlight.category}
-                    className="aspect-[4/3] h-full w-full lg:aspect-auto"
-                  />
-                </div>
-              ) : null}
+              <div className="lg:col-span-5">
+                <BrainrotMedia
+                  src={spotlight.image_url}
+                  title={spotlight.title}
+                  category={spotlight.category}
+                  className="aspect-video h-full w-full border-b border-zinc-800/80 lg:border-b-0 lg:border-r"
+                />
+              </div>
 
-              <div
-                className={`flex flex-col justify-between gap-5 p-6 sm:p-8 ${
-                  spotlight.image_url ? 'lg:col-span-8' : 'lg:col-span-12'
-                }`}
-              >
+              <div className="flex flex-col justify-between gap-5 p-6 sm:p-8 lg:col-span-7">
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3 text-xs">
                     {catStyle && (

@@ -61,6 +61,47 @@ export async function createBrainrot(
   return data as BrainrotEntry;
 }
 
+export const BRAINROT_BUCKET = 'brainrot-images';
+
+export async function uploadBrainrotImage(file: File): Promise<string> {
+  if (!supabase) {
+    throw new Error('Supabase environment variables belum dikonfigurasi.');
+  }
+
+  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+  const safeExt = rawExt.replace(/[^a-z0-9]/g, '') || 'png';
+  const uniqueId =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const filePath = `uploads/${Date.now()}-${uniqueId}.${safeExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(BRAINROT_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    });
+
+  if (uploadError) {
+    throw new Error(
+      uploadError.message ||
+        `Gagal mengunggah gambar ke bucket ${BRAINROT_BUCKET}.`
+    );
+  }
+
+  const { data } = supabase.storage
+    .from(BRAINROT_BUCKET)
+    .getPublicUrl(filePath);
+
+  if (!data?.publicUrl) {
+    throw new Error('Gagal mendapatkan public URL gambar dari Supabase.');
+  }
+
+  return data.publicUrl;
+}
+
 export async function upvoteBrainrot(
   id: string,
   currentUpvotes: number

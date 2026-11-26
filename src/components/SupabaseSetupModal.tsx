@@ -26,7 +26,17 @@ create policy "Public insert brainrots" on public.brainrots
   for insert to anon, authenticated with check (true);
 
 create policy "Public update upvotes" on public.brainrots
-  for update to anon, authenticated using (true) with check (true);`;
+  for update to anon, authenticated using (true) with check (true);
+
+insert into storage.buckets (id, name, public)
+values ('brainrot-images', 'brainrot-images', true)
+on conflict (id) do nothing;
+
+create policy "Public read brainrot-images" on storage.objects
+  for select to anon, authenticated using (bucket_id = 'brainrot-images');
+
+create policy "Public upload brainrot-images" on storage.objects
+  for insert to anon, authenticated with check (bucket_id = 'brainrot-images');`;
 
 export function SupabaseSetupModal({
   isOpen,
