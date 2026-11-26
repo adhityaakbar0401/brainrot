@@ -1,0 +1,6 @@
+{
+  "name": "Brainrot Archive & Generator",
+  "description": "Arsip lore internet, kamus slang meme culture, dan generator brainrot harian berbasis React, Tailwind CSS, dan Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
